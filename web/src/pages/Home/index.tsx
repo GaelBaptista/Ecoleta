@@ -1,8 +1,9 @@
 import React from "react";
 import logo from "../../assets/logo.svg";
-import { RiLoginBoxLine } from "react-icons/ri";
+import { FiLogIn } from "react-icons/fi";
+import { Link } from "react-router-dom";
 
-import "./styles.css";
+import "./style.css";
 const Home: React.FC = () => {
   return (
     <div id="page-home">
@@ -15,12 +16,12 @@ const Home: React.FC = () => {
           <p>
             Ajudamos pessoas a encontrarem pontos de coleta de forma eficiente.
           </p>
-          <a href="/cadastro">
+          <Link to="/create-point">
             <span>
-              <RiLoginBoxLine />
+              <FiLogIn />
             </span>
             <strong>Cadastre um ponto de coleta</strong>
-          </a>
+          </Link>
         </main>
       </div>
     </div>
