@@ -4,16 +4,26 @@ import { Request, Response } from "express";
 class PointsController {
   async index(request: Request, response: Response): Promise<any> {
     const { city, uf, items } = request.query;
+
+    if (!city || !uf || !items) {
+      return response
+        .status(400)
+        .json({ message: "Parâmetros ausentes para busca." });
+    }
+
     const parsedItems = String(items)
       .split(",")
-      .map((item) => Number(item.trim()));
+      .map((item) => Number(item.trim()))
+      .filter((item) => !isNaN(item));
+
     const points = await knex("points")
-      .join("point_items", "point.id", "=", "point_items.point_id")
+      .join("point_items", "points.id", "=", "point_items.point_id")
       .whereIn("point_items.item_id", parsedItems)
       .where("city", String(city))
       .where("uf", String(uf))
       .distinct()
       .select("points.*");
+
     return response.json(points);
   }
 
@@ -29,10 +39,24 @@ class PointsController {
       .select("items.title");
     return response.json({ point, items });
   }
-  async create(request: Request, response: Response) {
-    const { name, email, whatsapp, latitude, longitude, city, items } =
+  create = async (request: Request, response: Response): Promise<any> => {
+    const { name, email, whatsapp, latitude, longitude, city, uf, items } =
       request.body;
 
+    if (
+      !name ||
+      !email ||
+      !whatsapp ||
+      !latitude ||
+      !longitude ||
+      !city ||
+      !uf ||
+      !items?.length
+    ) {
+      return response
+        .status(400)
+        .json({ message: "Dados inválidos no cadastro de ponto" });
+    }
     const trx = await knex.transaction();
     const point = {
       image:
@@ -43,23 +67,21 @@ class PointsController {
       latitude,
       longitude,
       city,
-      uf: "SP",
+      uf,
     };
 
     const insertedIds = await trx("points").insert(point);
     const point_id = insertedIds[0];
 
-    const pointItems = items.map((item_id: Number) => {
-      return {
-        item_id,
-        point_id,
-      };
-    });
+    const pointItems = items.map((item_id: number) => ({
+      item_id,
+      point_id,
+    }));
 
     await trx("point_items").insert(pointItems);
     await trx.commit();
     response.json({ id: point_id, ...point });
-  }
+  };
 }
 
 export default PointsController;
